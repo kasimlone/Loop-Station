@@ -283,7 +283,8 @@ label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
     }
     player = new YT.Player("yt", {
       videoId: id,
-      playerVars: { start: Math.floor(start), rel: 0, modestbranding: 1, playsinline: 1 },
+      host: "https://www.youtube-nocookie.com",
+      playerVars: { start: Math.floor(start), rel: 0, modestbranding: 1, playsinline: 1, origin: window.location.origin },
       events: {
         onReady: () => { ready = true; setRate(rate); },
         onStateChange: onState,
