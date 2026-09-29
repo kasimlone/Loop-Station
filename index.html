@@ -148,6 +148,44 @@ label.toggle { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; 
 label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Mobile: fit everything on one screen without scroll */
+@media (max-width: 720px) {
+  body { padding-block: 10px 12px; padding-inline: 10px; }
+  .wrap { gap: 8px; }
+  .stage { gap: 8px; }
+  .left, .right { gap: 8px; }
+  header { gap: 4px; }
+  h1 { font-size: 1.15rem; }
+  .keys { display: none; }
+  form.load input { padding: 8px 11px; font-size: 14px; }
+  form.load button { padding: 8px 12px; }
+  .error { display: none; }
+  .player { aspect-ratio: auto; height: 30vh; max-height: 34vh; }
+  .transport { padding: 8px 10px; gap: 6px; }
+  .timeline { height: 28px; }
+  .track, .progress { top: 11px; }
+  .region { top: 5px; height: 18px; }
+  .head { top: 6px; }
+  .row { gap: 6px; }
+  .time { font-size: 0.9rem; }
+  .btns button { padding: 6px 10px; font-size: 13px; }
+  .panels { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .panel { padding: 8px 10px; gap: 6px; }
+  .panel h2 { font-size: 0.68rem; }
+  .rate-readout { font-size: 1.25rem; }
+  .chips { gap: 4px; }
+  .chips button { padding: 5px 0; font-size: 11px; }
+  .fine button { padding: 4px 8px; font-size: 12px; }
+  .markers { gap: 6px; }
+  .marker { padding: 6px 8px; gap: 5px; }
+  .marker .val { font-size: 0.95rem; }
+  .marker button { padding: 5px 6px; font-size: 12px; }
+  .nudge button { padding: 3px 0; font-size: 11px; }
+  .loop-actions { gap: 6px; }
+  .loop-actions button { padding: 5px 10px; font-size: 12px; }
+  label.toggle { font-size: 0.8rem; }
+}
 </style>
 </head>
 <body>
