@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loop Station</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: one centred working column — link bar, player, transport strip with timeline, speed + loop panels side by side (stacked on phones) */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --ink: #14202b;
+  --muted: #5d6b78;
+  --line: #d3dae1;
+  --accent: #2c4bd6;
+  --accent-soft: rgba(44, 75, 214, 0.14);
+  --a: #0f8a6c;
+  --b: #d9531e;
+  --focus: #2c4bd6;
+  --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #18212a; --ink: #e6ebf0; --muted: #93a1ae; --line: #2a3642;
+    --accent: #7d95ff; --accent-soft: rgba(125, 149, 255, 0.18); --a: #3fc9a4; --b: #ff8a5b; --focus: #9fb0ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #18212a; --ink: #e6ebf0; --muted: #93a1ae; --line: #2a3642;
+  --accent: #7d95ff; --accent-soft: rgba(125, 149, 255, 0.18); --a: #3fc9a4; --b: #ff8a5b; --focus: #9fb0ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 20px; }
+
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font: 700 1.6rem/1.1 var(--font-display); margin: 0; letter-spacing: -0.01em; }
+h1 span { color: var(--accent); }
+.keys { color: var(--muted); font-size: 0.8rem; }
+kbd {
+  font: 600 0.72rem var(--font-mono); padding: 1px 5px; border: 1px solid var(--line);
+  border-bottom-width: 2px; border-radius: 4px; background: var(--surface); color: var(--ink);
+}
+
+form.load { display: flex; gap: 8px; }
+form.load input {
+  flex: 1; min-width: 0; font: 15px var(--font-body); padding: 11px 14px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink);
+}
+button {
+  font: 500 14px var(--font-body); cursor: pointer; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 9px 14px; transition: background .12s, border-color .12s, transform .06s;
+}
+button:hover { border-color: var(--muted); }
+button:active { transform: translateY(1px); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root:not([data-theme="light"]) button.primary { color: var(--bg); }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) button.primary { color: #fff; } }
+:root[data-theme="light"] button.primary { color: #fff; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.error { color: var(--b); font-size: 0.85rem; margin: -10px 0 0; min-height: 1.2em; }
+
+.player {
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9;
+  background: #000; border-radius: 10px; overflow: hidden;
+}
+.player iframe, .player #yt { position: absolute; inset: 0; width: 100%; height: 100%; }
+.placeholder {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  color: #b9c3cc; font-size: 0.95rem; padding: 16px; background: #111820;
+}
+
+/* Transport + timeline */
+.transport { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; }
+.timeline { position: relative; height: 34px; cursor: pointer; touch-action: none; }
+.track { position: absolute; left: 0; right: 0; top: 14px; height: 6px; border-radius: 3px; background: var(--line); }
+.progress { position: absolute; left: 0; top: 14px; height: 6px; border-radius: 3px; background: var(--muted); width: 0; }
+.region { position: absolute; top: 8px; height: 18px; background: var(--accent-soft); border-radius: 3px; display: none; }
+.region.on { display: block; }
+.region.active { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.pin { position: absolute; top: 2px; width: 2px; height: 30px; transform: translateX(-1px); display: none; }
+.pin.on { display: block; }
+.pin::after {
+  content: attr(data-l); position: absolute; top: -2px; left: 4px;
+  font: 600 10px var(--font-mono); color: var(--surface); padding: 0 3px; border-radius: 3px;
+}
+.pin.a { background: var(--a); } .pin.a::after { background: var(--a); }
+.pin.b { background: var(--b); } .pin.b::after { background: var(--b); left: auto; right: 4px; }
+.head { position: absolute; top: 9px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); transform: translateX(-8px); left: 0; box-shadow: 0 0 0 3px var(--surface); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.time { font: 600 1rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.time small { color: var(--muted); font-weight: 400; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.panels { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; }
+@media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.panel h2 { margin: 0; font: 700 0.78rem var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+
+/* Speed */
+.rate-readout { font: 600 2.2rem/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rate-readout small { font-size: 1rem; color: var(--muted); font-weight: 400; }
+.chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.chips button { padding: 7px 0; font: 600 13px var(--font-mono); }
+.chips button.sel { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.fine { display: flex; gap: 8px; align-items: center; }
+.fine button { padding: 6px 12px; font-family: var(--font-mono); }
+
+/* Loop */
+.markers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.marker { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 8px; min-width: 0; }
+.marker .lbl { font: 600 0.75rem var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+.marker.a .dot { background: var(--a); } .marker.b .dot { background: var(--b); }
+.marker .val { font: 600 1.15rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.marker .val.unset { color: var(--muted); font-weight: 400; }
+.set-a { border-color: var(--a); color: var(--a); font-weight: 600; }
+.set-b { border-color: var(--b); color: var(--b); font-weight: 600; }
+.nudge { display: flex; gap: 4px; }
+.nudge button { flex: 1; padding: 4px 0; font: 12px var(--font-mono); }
+.status { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.pill { font: 600 0.72rem var(--font-mono); padding: 3px 8px; border-radius: 99px; background: var(--line); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.pill.live { background: var(--accent); color: var(--surface); }
+.loop-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+label.toggle { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; cursor: pointer; }
+label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Loop <span>Station</span></h1>
+    <div class="keys"><kbd>Space</kbd> play/pause · <kbd>A</kbd> start · <kbd>B</kbd> end · <kbd>L</kbd> loop on/off · <kbd>-</kbd>/<kbd>+</kbd> speed</div>
+  </header>
+
+  <form class="load" id="loadForm">
+    <input id="url" type="text" inputmode="url" autocomplete="off" placeholder="Paste a YouTube link, e.g. https://www.youtube.com/watch?v=..." aria-label="YouTube link">
+    <button class="primary" type="submit">Load</button>
+  </form>
+  <p class="error" id="err" role="alert"></p>
+
+  <div class="player">
+    <div id="yt"></div>
+    <div class="placeholder" id="ph">Paste a YouTube link above and press Load.</div>
+  </div>
+
+  <section class="transport">
+    <div class="timeline" id="timeline" aria-label="Seek bar">
+      <div class="track"></div>
+      <div class="region" id="region"></div>
+      <div class="progress" id="progress"></div>
+      <div class="pin a" id="pinA" data-l="A"></div>
+      <div class="pin b" id="pinB" data-l="B"></div>
+      <div class="head" id="head"></div>
+    </div>
+    <div class="row">
+      <div class="time"><span id="cur">0:00.0</span> <small>/ <span id="dur">0:00.0</span></small></div>
+      <div class="btns">
+        <button id="back5" type="button">−5s</button>
+        <button id="playBtn" class="primary" type="button">Play</button>
+        <button id="fwd5" type="button">+5s</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="panels">
+    <section class="panel">
+      <h2>Playback speed</h2>
+      <div class="rate-readout"><span id="rateVal">1.00</span><small>×</small></div>
+      <div class="chips" id="chips"></div>
+      <div class="fine">
+        <button id="slower" type="button" aria-label="Slower">−</button>
+        <input id="rateSlider" type="range" min="0.25" max="2" step="0.05" value="1" aria-label="Speed">
+        <button id="faster" type="button" aria-label="Faster">+</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>A–B loop <span class="pill" id="loopPill">Off</span></h2>
+      <div class="markers">
+        <div class="marker a">
+          <div class="lbl"><span class="dot"></span>Start</div>
+          <div class="val unset" id="aVal">not set</div>
+          <button class="set-a" id="setA" type="button">Set start (A)</button>
+          <div class="nudge"><button type="button" data-n="a" data-d="-0.1">−0.1s</button><button type="button" data-n="a" data-d="0.1">+0.1s</button></div>
+        </div>
+        <div class="marker b">
+          <div class="lbl"><span class="dot"></span>End</div>
+          <div class="val unset" id="bVal">not set</div>
+          <button class="set-b" id="setB" type="button">Set end (B)</button>
+          <div class="nudge"><button type="button" data-n="b" data-d="-0.1">−0.1s</button><button type="button" data-n="b" data-d="0.1">+0.1s</button></div>
+        </div>
+      </div>
+      <div class="loop-actions">
+        <label class="toggle"><input type="checkbox" id="loopOn" checked> Loop when both are set</label>
+      </div>
+      <div class="loop-actions">
+        <button id="toA" type="button">Jump to start</button>
+        <button id="clear" type="button">Clear markers</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const PRESETS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+  let player = null, ready = false, apiReady = false, pendingId = null;
+  let A = null, B = null, rate = 1, scrubbing = false;
+
+  // ---------- URL parsing ----------
+  function parseYouTube(input) {
+    const s = input.trim();
+    if (/^[\w-]{11}$/.test(s)) return { id: s, start: 0 };
+    let u;
+    try { u = new URL(s.startsWith("http") ? s : "https://" + s); } catch { return null; }
+    const host = u.hostname.replace(/^www\.|^m\.|^music\./, "");
+    let id = null;
+    if (host === "youtu.be") id = u.pathname.slice(1).split("/")[0];
+    else if (host.endsWith("youtube.com") || host.endsWith("youtube-nocookie.com")) {
+      if (u.searchParams.get("v")) id = u.searchParams.get("v");
+      else {
+        const m = u.pathname.match(/^\/(embed|shorts|live|v)\/([\w-]{11})/);
+        if (m) id = m[2];
+      }
+    }
+    if (!id || !/^[\w-]{11}$/.test(id)) return null;
+    return { id, start: parseT(u.searchParams.get("t") || u.searchParams.get("start")) };
+  }
+  function parseT(t) {
+    if (!t) return 0;
+    if (/^\d+$/.test(t)) return +t;
+    const m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    return m ? (+(m[1] || 0)) * 3600 + (+(m[2] || 0)) * 60 + (+(m[3] || 0)) : 0;
+  }
+
+  // ---------- formatting ----------
+  function fmt(t) {
+    if (t == null || isNaN(t)) return "0:00.0";
+    t = Math.max(0, t);
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    const ss = s.toFixed(1).padStart(4, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+  }
+
+  // ---------- YouTube API ----------
+  window.onYouTubeIframeAPIReady = function () {
+    apiReady = true;
+    if (pendingId) create(pendingId.id, pendingId.start);
+  };
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  tag.onerror = () => { $("err").textContent = "Couldn't reach YouTube. Check your connection and reload the page."; };
+  document.head.appendChild(tag);
+
+  function create(id, start) {
+    $("ph").hidden = true;
+    if (player && ready) {
+      player.loadVideoById({ videoId: id, startSeconds: start });
+      return;
+    }
+    player = new YT.Player("yt", {
+      videoId: id,
+      playerVars: { start: Math.floor(start), rel: 0, modestbranding: 1, playsinline: 1 },
+      events: {
+        onReady: () => { ready = true; setRate(rate); },
+        onStateChange: onState,
+        onError: (e) => {
+          const msgs = { 2: "That link doesn't point to a valid video.", 5: "This video can't play in an embedded player.", 100: "That video was removed or is private.", 101: "The owner doesn't allow this video to be embedded.", 150: "The owner doesn't allow this video to be embedded.", 153: "YouTube blocked playback. Open this page from a web address (http:// or https://), not as a local file." };
+          $("err").textContent = msgs[e.data] || "YouTube couldn't play this video (error " + e.data + ").";
+        }
+      }
+    });
+  }
+
+  function onState(e) {
+    const playing = e.data === YT.PlayerState.PLAYING;
+    $("playBtn").textContent = playing ? "Pause" : "Play";
+    // When the video ends inside an active loop (B at the very end), go back to A.
+    if (e.data === YT.PlayerState.ENDED && loopActive()) { player.seekTo(A, true); player.playVideo(); }
+    if (e.data === YT.PlayerState.PLAYING) setRate(rate);
+  }
+
+  $("loadForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    $("err").textContent = "";
+    const r = parseYouTube($("url").value);
+    if (!r) { $("err").textContent = "That doesn't look like a YouTube link. Try a youtube.com/watch, youtu.be or Shorts link."; return; }
+    clearMarkers();
+    if (apiReady) create(r.id, r.start); else pendingId = r;
+  });
+
+  // ---------- transport ----------
+  const t = () => (player && ready ? player.getCurrentTime() : 0);
+  const d = () => (player && ready ? player.getDuration() || 0 : 0);
+  function togglePlay() {
+    if (!ready) return;
+    player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
+  }
+  function seek(sec) { if (ready) player.seekTo(Math.max(0, Math.min(d(), sec)), true); }
+  $("playBtn").onclick = togglePlay;
+  $("back5").onclick = () => seek(t() - 5);
+  $("fwd5").onclick = () => seek(t() + 5);
+
+  // Timeline click/drag to seek
+  const tl = $("timeline");
+  function seekFromEvent(ev) {
+    const r = tl.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    seek(f * d());
+  }
+  tl.addEventListener("pointerdown", (ev) => { scrubbing = true; tl.setPointerCapture(ev.pointerId); seekFromEvent(ev); });
+  tl.addEventListener("pointermove", (ev) => { if (scrubbing) seekFromEvent(ev); });
+  tl.addEventListener("pointerup", () => { scrubbing = false; });
+
+  // ---------- speed ----------
+  const chips = $("chips");
+  PRESETS.forEach((p) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = p + "×"; b.dataset.r = p;
+    b.onclick = () => setRate(p);
+    chips.appendChild(b);
+  });
+  function setRate(r) {
+    rate = Math.round(Math.max(0.25, Math.min(2, r)) * 100) / 100;
+    if (ready) player.setPlaybackRate(rate);
+    $("rateVal").textContent = rate.toFixed(2);
+    $("rateSlider").value = rate;
+    chips.querySelectorAll("button").forEach((b) => b.classList.toggle("sel", +b.dataset.r === rate));
+  }
+  $("rateSlider").addEventListener("input", (e) => setRate(+e.target.value));
+  $("slower").onclick = () => setRate(rate - 0.05);
+  $("faster").onclick = () => setRate(rate + 0.05);
+  setRate(1);
+
+  // ---------- A–B loop ----------
+  const loopActive = () => $("loopOn").checked && A != null && B != null && B > A;
+  function setA(v) {
+    A = Math.max(0, v);
+    if (B != null && B <= A) B = null; // end must come after start
+    render();
+  }
+  function setB(v) {
+    if (A != null && v <= A) { $("err").textContent = "End must be after the start marker."; return; }
+    $("err").textContent = "";
+    B = Math.min(v, d() || v);
+    render();
+    if (loopActive()) seek(A);
+  }
+  function clearMarkers() { A = B = null; render(); }
+  $("setA").onclick = () => ready && setA(t());
+  $("setB").onclick = () => ready && setB(t());
+  $("clear").onclick = clearMarkers;
+  $("toA").onclick = () => A != null && seek(A);
+  $("loopOn").onchange = render;
+  document.querySelectorAll(".nudge button").forEach((b) => {
+    b.onclick = () => {
+      const delta = +b.dataset.d;
+      if (b.dataset.n === "a" && A != null) setA(Math.min(A + delta, B != null ? B - 0.1 : Infinity));
+      if (b.dataset.n === "b" && B != null) { B = Math.max(A != null ? A + 0.1 : 0, B + delta); render(); }
+    };
+  });
+
+  function render() {
+    $("aVal").textContent = A == null ? "not set" : fmt(A);
+    $("aVal").classList.toggle("unset", A == null);
+    $("bVal").textContent = B == null ? "not set" : fmt(B);
+    $("bVal").classList.toggle("unset", B == null);
+    const live = loopActive();
+    $("loopPill").textContent = live ? "Looping" : (A != null && B == null ? "Set end" : "Off");
+    $("loopPill").classList.toggle("live", live);
+    $("toA").disabled = A == null;
+    placeMarkers();
+  }
+  function pct(v) { const D = d(); return D ? (v / D) * 100 : 0; }
+  function placeMarkers() {
+    const pa = $("pinA"), pb = $("pinB"), rg = $("region");
+    pa.classList.toggle("on", A != null); pb.classList.toggle("on", B != null);
+    if (A != null) pa.style.left = pct(A) + "%";
+    if (B != null) pb.style.left = pct(B) + "%";
+    const both = A != null && B != null;
+    rg.classList.toggle("on", both);
+    rg.classList.toggle("active", loopActive());
+    if (both) { rg.style.left = pct(A) + "%"; rg.style.width = (pct(B) - pct(A)) + "%"; }
+  }
+
+  // ---------- tick: UI + loop enforcement ----------
+  setInterval(() => {
+    if (!ready) return;
+    const now = t(), D = d();
+    if (loopActive() && player.getPlayerState() === YT.PlayerState.PLAYING) {
+      // Jump back to A once we reach B (or if the playhead was dragged outside the loop).
+      if (now >= B || now < A - 0.25) { player.seekTo(A, true); }
+    }
+    $("cur").textContent = fmt(now);
+    $("dur").textContent = fmt(D);
+    const p = D ? (now / D) * 100 : 0;
+    $("progress").style.width = p + "%";
+    $("head").style.left = p + "%";
+    placeMarkers();
+  }, 40);
+
+  // ---------- keyboard shortcuts ----------
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" && e.target.type === "text") return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === " ") { e.preventDefault(); togglePlay(); }
+    else if (k === "a") $("setA").click();
+    else if (k === "b") $("setB").click();
+    else if (k === "l") { $("loopOn").checked = !$("loopOn").checked; render(); }
+    else if (k === "-" || k === "_") setRate(rate - 0.05);
+    else if (k === "=" || k === "+") setRate(rate + 0.05);
+    else if (k === "arrowleft") { e.preventDefault(); seek(t() - 5); }
+    else if (k === "arrowright") { e.preventDefault(); seek(t() + 5); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
