@@ -45,9 +45,12 @@ body {
   color: var(--ink);
   font: 15px/1.5 var(--font-body);
   padding-inline: 16px;
-  padding-block: 24px 48px;
+  padding-block: 16px 24px;
 }
-.wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 20px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 14px; }
+.stage { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr); gap: 18px; align-items: start; }
+.left, .right { display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
 
 header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 h1 { font: 700 1.6rem/1.1 var(--font-display); margin: 0; letter-spacing: -0.01em; }
@@ -111,13 +114,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .time small { color: var(--muted); font-weight: 400; }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.panels { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; }
-@media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.panels { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
 .panel h2 { margin: 0; font: 700 0.78rem var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 
 /* Speed */
-.rate-readout { font: 600 2.2rem/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rate-readout { font: 600 1.6rem/1 var(--font-mono); font-variant-numeric: tabular-nums; }
 .rate-readout small { font-size: 1rem; color: var(--muted); font-weight: 400; }
 .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .chips button { padding: 7px 0; font: 600 13px var(--font-mono); }
@@ -161,31 +163,34 @@ label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
   </form>
   <p class="error" id="err" role="alert"></p>
 
-  <div class="player">
-    <div id="yt"></div>
-    <div class="placeholder" id="ph">Paste a YouTube link above and press Load.</div>
-  </div>
-
-  <section class="transport">
-    <div class="timeline" id="timeline" aria-label="Seek bar">
-      <div class="track"></div>
-      <div class="region" id="region"></div>
-      <div class="progress" id="progress"></div>
-      <div class="pin a" id="pinA" data-l="A"></div>
-      <div class="pin b" id="pinB" data-l="B"></div>
-      <div class="head" id="head"></div>
+  <div class="stage">
+   <div class="left">
+    <div class="player">
+      <div id="yt"></div>
+      <div class="placeholder" id="ph">Paste a YouTube link above and press Load.</div>
     </div>
-    <div class="row">
-      <div class="time"><span id="cur">0:00.0</span> <small>/ <span id="dur">0:00.0</span></small></div>
-      <div class="btns">
-        <button id="back5" type="button">−5s</button>
-        <button id="playBtn" class="primary" type="button">Play</button>
-        <button id="fwd5" type="button">+5s</button>
+
+    <section class="transport">
+      <div class="timeline" id="timeline" aria-label="Seek bar">
+        <div class="track"></div>
+        <div class="region" id="region"></div>
+        <div class="progress" id="progress"></div>
+        <div class="pin a" id="pinA" data-l="A"></div>
+        <div class="pin b" id="pinB" data-l="B"></div>
+        <div class="head" id="head"></div>
       </div>
-    </div>
-  </section>
+      <div class="row">
+        <div class="time"><span id="cur">0:00.0</span> <small>/ <span id="dur">0:00.0</span></small></div>
+        <div class="btns">
+          <button id="back5" type="button">−5s</button>
+          <button id="playBtn" class="primary" type="button">Play</button>
+          <button id="fwd5" type="button">+5s</button>
+        </div>
+      </div>
+    </section>
+   </div>
 
-  <div class="panels">
+   <div class="right panels">
     <section class="panel">
       <h2>Playback speed</h2>
       <div class="rate-readout"><span id="rateVal">1.00</span><small>×</small></div>
@@ -221,6 +226,7 @@ label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
         <button id="clear" type="button">Clear markers</button>
       </div>
     </section>
+   </div>
   </div>
 </div>
 
