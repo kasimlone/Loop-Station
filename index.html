@@ -191,42 +191,47 @@ label.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-/* Mobile: fit everything on one screen without scroll */
+/* Mobile: everything vertical, fit to screen */
 @media (max-width: 720px) {
-  body { padding-block: 10px 12px; padding-inline: 10px; }
-  .wrap { gap: 8px; }
-  .stage { gap: 8px; }
-  .left, .right { gap: 8px; }
+  html, body { height: 100dvh; overflow: hidden; }
+  body { padding: 8px 10px; display: flex; }
+  .wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+  .left, .right { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .right.panels { gap: 6px; }
   header { gap: 4px; }
-  h1 { font-size: 1.15rem; }
+  h1 { font-size: 1.05rem; }
   .keys { display: none; }
-  form.load input { padding: 8px 11px; font-size: 14px; }
-  form.load button { padding: 8px 12px; }
+  form.load input { padding: 7px 10px; font-size: 14px; }
+  form.load button { padding: 7px 12px; font-size: 13px; }
   .error { display: none; }
-  .player { aspect-ratio: auto; height: 30vh; max-height: 34vh; }
-  .transport { padding: 8px 10px; gap: 6px; }
-  .timeline { height: 28px; }
-  .track, .progress { top: 11px; }
-  .region { top: 5px; height: 18px; }
-  .head { top: 6px; }
+  .player { aspect-ratio: auto; flex: 0 0 auto; height: clamp(140px, 24vh, 220px); }
+  .transport { padding: 6px 10px; gap: 4px; flex-shrink: 0; }
+  .timeline { height: 22px; }
+  .track, .progress { top: 8px; height: 5px; }
+  .region { top: 3px; height: 16px; }
+  .head { top: 3px; width: 14px; height: 14px; }
+  .pin { height: 22px; }
   .row { gap: 6px; }
-  .time { font-size: 0.9rem; }
-  .btns button { padding: 6px 10px; font-size: 13px; }
-  .panels { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .panel { padding: 8px 10px; gap: 6px; }
-  .panel h2 { font-size: 0.68rem; }
-  .rate-readout { font-size: 1.25rem; }
-  .chips { gap: 4px; }
-  .chips button { padding: 5px 0; font-size: 11px; }
-  .fine button { padding: 4px 8px; font-size: 12px; }
+  .time { font-size: 0.85rem; }
+  .btns button { padding: 5px 10px; font-size: 12px; }
+  .panel { padding: 7px 10px; gap: 5px; flex-shrink: 0; }
+  .panel h2 { font-size: 0.65rem; }
+  .rate-readout { font-size: 1rem; }
+  .chips { grid-template-columns: repeat(8, 1fr); gap: 3px; }
+  .chips button { padding: 4px 0; font-size: 10px; }
+  .fine button { padding: 3px 8px; font-size: 11px; }
   .markers { gap: 6px; }
-  .marker { padding: 6px 8px; gap: 5px; }
-  .marker .val { font-size: 0.95rem; }
-  .marker button { padding: 5px 6px; font-size: 12px; }
-  .nudge button { padding: 3px 0; font-size: 11px; }
-  .loop-actions { gap: 6px; }
-  .loop-actions button { padding: 5px 10px; font-size: 12px; }
-  label.toggle { font-size: 0.8rem; }
+  .marker { padding: 5px 7px; gap: 4px; }
+  .marker .lbl { font-size: 0.65rem; }
+  .marker .val { font-size: 0.85rem; }
+  .marker button { padding: 4px 6px; font-size: 11px; }
+  .nudge button { padding: 2px 0; font-size: 10px; }
+  .loop-actions { gap: 5px; }
+  .loop-actions button { padding: 4px 9px; font-size: 11px; }
+  label.toggle { font-size: 0.78rem; }
+  .save-loop input { padding: 5px 9px; font-size: 13px; }
+  .save-loop button { padding: 5px 10px; font-size: 12px; }
 }
 </style>
 </head>
